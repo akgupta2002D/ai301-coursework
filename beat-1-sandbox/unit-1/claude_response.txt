@@ -1,0 +1,37 @@
+
+All three graded against the rubric. Repo-level checks (shared evidence):
+
+- maintainer-alive — Aburke225 (COLLABORATOR) commented on issues #52 and #43 on 2026-09-16, 6 days before today. Well within 90 days. pass
+- repo-in-use — most recent human, non-bot commit to main is 2026-09-16 by Aburke225 ("chore: track five more manifest entries against the tracker"), 6 days ago. No releases exist, but the commit clause satisfies the OR. pass
+- ai-policy-allows — docs/CONTRIBUTING.md and .github/PULL_REQUEST_TEMPLATE.md state workflow, CI, xfail, and lint rules; no AI prohibition or disclosure requirement anywhere. Silence passes. pass
+
+Per-issue: no issue has an assignee, a linked PR, or a single comment; the repo has exactly one PR in its history (#74, open, against issue #60), so no closed-unmerged attempts and no-failed-attemptspass for all three.
+
+Ranked read-out
+
+Accepted, in fit order:
+
+1. #65 — review_service unit tests misconfigure async mocks (13 of 19 fail)    best fit. A bounded Pye-line repro (pytesttests/unit/test_review_service.py -q) and a stated fix direction            (AsyncMock for execute). It lands squarely onyour Python/FastAPI experience and on the two things you said you want to   practice — reading ser and working testsalongside a fix. Per docs/CONTRIBUTING.md, check whether the covering       tests carry @pytest.maers; removing them is part of the fix.                                                              2. #36 — no test for POST has no ingested documents — also a good fit: bounded, API-layer, one file                             (tests/unit/test_revies you to read the route'serror handling before you can assert on it. Ranks below #65 only because    adding one test exercihan diagnosing 13failures. Its six scattered labels (api, devops, docs, tests) don't widen   the ask — the body nam
+3. #47 — API docs lack example curl commands — passes every required check     and is genuinely bounds documentation only. Itgives you no backend code to read and no test to write, which is what you   fit profile asks for.
+                                                                            Rejected: none.
+                                                                            [
+  {                                                                             "item": "https://gith-ai301-fa26-s1/issues/65",
+    "checks": [                                                                   {"name": "maintaine "evidence": "Aburke225(COLLABORATOR) commented on issues #52 and #43 on 2026-09-16, 6 days before today"},
+      {"name": "repo-in-use", "grade": "pass", "evidence": "Most recent humacommit to main: 2026-09-1days"},
+      {"name": "scope-fits", "grade": "pass", "evidence": "One cohesive bug in one file: 'Rework the ting CRUD tests actuallyrun', with repro 'pytest tests/unit/test_review_service.py -q'"},                 {"name": "unclaimednce": "0 assignees, 0comments, timeline shows only 3 'labeled' events and no linked PR"},              {"name": "ai-policy "evidence":"docs/CONTRIBUTING.md and PR template state no AI policy; silence passes"},       {"name": "no-failed", "evidence": "Repo hasone PR total (#74, open, for issue #60); zero closed-unmerged PRs linked to #65"}
+    ],                                                                          "verdict": "accept"
+  },                                                                          {
+    "item": "https://github.com/codepath/pathreview-ai301-fa26-s1/issues/36"    "checks": [
+      {"name": "maintainer-alive", "grade": "pass", "evidence": "Aburke225  (COLLABORATOR) commented 026-09-16, 6 days beforetoday"},                                                                          {"name": "repo-in-udence": "Most recent human commit to main: 2026-09-16 by Aburke225, within 90 days"},                        {"name": "scope-fitence": "Single goal,single file: 'Add a test that verifies the endpoint returns an appropriate  error rather than crashinew_routes.py"},
+      {"name": "unclaimed", "grade": "pass", "evidence": "0 assignees, 0    comments, timeline shows d no linked PR"},
+      {"name": "ai-policy-allows", "grade": "pass", "evidence":             "docs/CONTRIBUTING.md andolicy; silence passes"},
+      {"name": "no-failed-attempts", "grade": "pass", "evidence": "Repo has one PR total (#74, open, d-unmerged PRs linked to#36"}                                                                           ],
+    "verdict": "accept"                                                       },
+  {                                                                             "item": "https://gith-ai301-fa26-s1/issues/47",
+    "checks": [                                                                   {"name": "maintaine "evidence": "Aburke225(COLLABORATOR) commented on issues #52 and #43 on 2026-09-16, 6 days before today"},
+      {"name": "repo-in-use", "grade": "pass", "evidence": "Most recent humacommit to main: 2026-09-1days"},
+      {"name": "scope-fits", "grade": "pass", "evidence": "One docs topic,  one file: 'docs/API.md ..ns', estimated effort 2-3hours"},                                                                          {"name": "unclaimednce": "0 assignees, 0comments, timeline shows only 3 'labeled' events and no linked PR"},              {"name": "ai-policy "evidence":"docs/CONTRIBUTING.md and PR template state no AI policy; silence passes"},       {"name": "no-failed", "evidence": "Repo hasone PR total (#74, open, for issue #60); zero closed-unmerged PRs linked to #47"}
+    ],
+    "verdict": "accept"
+  }
+]
