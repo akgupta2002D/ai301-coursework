@@ -55,10 +55,9 @@ happened; these entries are the toolkit's own timeline.
 All four entries are graded. Keep every heading below, and fill each
 one in the week it belongs to.
 
-**Unit 5: [one line on the tool work]**
+**Unit 5: Built an issue scout from my own gh queries, ranking filters, and rubric**
 
-[2-4 sentences: what you built (the scout, your strategy), what broke
-or fell short, what changed because of it.]
+I built a scout from four `gh search issues` queries, six ranking filters, and a seven-check rubric, then ran a scan that graded five issues. It fell short in three ways: all five survivors were created within the hour because my tie-break was recency, it accepted a one-author repo with 3 stars, and it rejected an umbrella issue that named one small good-first-issue step. I fixed those with a `createdAt` field, a 7-day drop rule, a one-result-per-repo rule, a `repo-adoption` check, and a tracking-issue clause, but a second scan showed my guessed 90-day repo-age threshold rejects good fits like glassbeetle#316, so that rule needs revisiting. The scout also rejected my chosen issue, AetherSDR#7012, because a maintainer hasn't confirmed the design change, which I'll address when I claim it.
 
 **Unit 6: [one line on the tool work]**
 
