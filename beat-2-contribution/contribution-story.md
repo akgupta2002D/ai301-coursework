@@ -83,10 +83,16 @@ it only recognized `Closes #` and `docs/CONTRIBUTING.md`. I changed that rubric 
 procedure to follow the repo's stated rules, and the gate then passed and let PR #84
 open.
 
-**Unit 8: [one line on the tool work]**
+**Unit 8: Installed the PR monitor in my fork, wrote a playbook from repodx's real review times, and held a wait note**
 
-[2-4 sentences: the PR-monitor and your playbook. What it read, what it
-drafted, what you did with the draft.]
+I installed the PR monitor in my repodx fork's `.claude/` and wrote my playbook from
+data: CONTRIBUTING.md says reviews come "within a day", and September's five outside PRs
+all got a first response within 11 hours, but no outside PR has merged since 2026-09-27
+and #83 sat 3 days untouched, so I set the first-review nudge at 7 quiet days. Its first
+run on PR #84 drafted a wait note (no nudge before 2026-11-30), which I kept off the
+thread. It also flagged that no CI had reported; I confirmed the `tests` workflow is at
+`action_required`, waiting on maintainer approval, so I rewrote my nudge rule to say
+"tests pass locally" instead of claiming checks pass.
 
 ---
 
@@ -468,6 +474,16 @@ and a 39-character false-alarm guard; 79b236b adds the pattern after Replicate a
 passes with just the regex, so without the file-level test a half fix would have looked
 done. No deviations from the plan.
 
+**2026-11-23 (later)**
+
+Wrote the PR description and ran the ship-gate: both repo checks passed, but my
+pr-precheck rejected the branch name (no issue number), a rule repodx doesn't set. I fixed
+my rubric instead of renaming the branch, the gate passed, and I opened PR #84 against
+upstream `main`. Then I installed the PR monitor and wrote my playbook; its first run
+drafted a wait note (no nudge before 2026-11-30) and pointed out that CI hadn't run. The
+`tests` workflow is at `action_required`, waiting on maintainer approval, so my PR's
+"checks" are local runs until then.
+
 **Toolkit**
 
 - Tool: Claude Code in my repodx fork, with `CLAUDE.local.md` loaded for the scanner map
@@ -503,7 +519,8 @@ false-alarm check, and an AI-use section in my own words.
 
 **Maintainer Feedback:**
 
-- 2026-11-23: none yet (PR opened today).
+- 2026-11-23: none yet. CI (`tests` workflow) shows `action_required`, waiting for the
+  maintainer to approve workflows for a first-time contributor.
 
 **Status:** Awaiting review
 
@@ -536,25 +553,63 @@ false-alarm check, and an AI-use section in my own words.
 
 **Technical Skills Gained**
 
-[What you learned technically, named concretely.]
+- Reading a scanner's pipeline end to end: in RepoDx a secret has to pass a cheap
+  substring pre-filter (`CANDIDATE_LITERALS` / `has_candidate`, checked per file and per
+  line) before any regex runs, so a new detector is two changes, not one.
+- Writing tests that prove the right thing: a line-level test can pass while the real
+  feature is broken, so I added a file-level test through `build_report` and showed it
+  fails on a regex-only build. And a guard test (39 characters) that passes before and
+  after is a false-alarm check, not proof of a fix.
+- Keeping secrets out of a secret scanner's own repo: fake keys built at runtime with
+  `fake(...)`, masked output only, and checking the repo still scores 100/100.
+- Matching a project's conventions from evidence: `gh pr view` on past provider PRs
+  (#43, #47, #60) to see the expected shape, the gitleaks rule for an undocumented key
+  length, and CI's Python matrix (3.9 and 3.13) to test on both.
+- Git workflow for a fork: a feature branch with commits that each say what they do,
+  `git worktree` to re-run my repro on main, `.git/info/exclude` for local files, and
+  `gh repo set-default` so the PR targets upstream.
 
 **Challenges Overcome**
 
-[What was hard and how you solved it; point at the real events, the
-Toolkit blocks above are full of them.]
+- My scout's first picks fell through: two were fixed by others within days and the third
+  was a weak fit. A fresh scan after the scope patch found repodx#63.
+- I stated a code claim I hadn't checked (that an env-reading file would still get its
+  lines scanned). repro-check caught it, and I turned it into reproduction step 5, which
+  became the strongest evidence that both gaps need fixing.
+- No official Linear key length: I documented the evidence (issue says 40, gitleaks
+  uses exactly 40, one third-party example has 32), picked 40, and put the risk and a
+  one-character alternative in the PR instead of guessing silently.
+- My own pr-precheck blocked the PR over a branch-name rule repodx never set. I fixed the
+  rubric to follow the repo's stated rules rather than bend my branch to my tool.
+- The course tools assume everything lives in `~/.claude/`. I kept every tool scoped to
+  the folder that uses it, which worked because each one finds its files relative to
+  itself.
+- Headless `claude -p` runs can't approve `gh` calls, so my scout and plan-check couldn't
+  read GitHub. I re-ran interactively or gave the tool a local snapshot of the thread.
 
 **What I'd Do Differently Next Time**
 
-[Reflection on your process.]
+- Check that a picked issue is still open, and re-check right before claiming. Two of my
+  original picks closed in under a week; my rubric now has that gap logged.
+- Read the code path before writing any claim about it, not after a tool flags it.
+- Look at the maintainer's current pace, not just the historical one, before choosing a
+  repo: repodx answered in hours in September but has gone quiet since.
+- Make my tools' assumptions explicit earlier (fixed dates in my search strategy, course
+  defaults in my rubric), since each one cost me a failed run before I saw it.
 
 ---
 
 ## Resources Used
 
-[What actually helped, not a reading list. List things this story
-already shows you using: the doc you followed to set the environment
-up, the thread that explained the bug, the person who answered you.
-One real entry beats ten plausible ones.]
-
-- [Link to documentation that helped]
-- [Discussion, issue, or post that helped]
+- omerbek/repodx CONTRIBUTING.md (claiming, `fake(...)`, the two test commands, the
+  false-alarm step): https://github.com/omerbek/repodx/blob/main/CONTRIBUTING.md
+- The issue itself, whose "How to do it" steps set the shape of the fix:
+  https://github.com/omerbek/repodx/issues/63
+- gitleaks' default rule for Linear keys, `lin_api_(?i)[a-z0-9]{40}`, which settled the
+  length: https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml
+- SailPoint's Linear API key entry, the 32-character example behind the length risk:
+  https://documentation.sailpoint.com/entro/help/supported-secrets/specific-secrets/linear-api-key.html
+- Past provider PRs #43, #47 and #60, which showed a fix touches only `repodx.py` and the
+  tests: https://github.com/omerbek/repodx/pull/60
+- repodx's CI workflow, for the Python versions to test (3.9 and 3.13):
+  https://github.com/omerbek/repodx/blob/main/.github/workflows/tests.yml
