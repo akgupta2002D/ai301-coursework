@@ -530,8 +530,8 @@ false-alarm check, and an AI-use section in my own words.
   tests from #84 by @akgupta2002D". No review comments; the length question needed no
   change.
 - 2026-11-23: I read #85's diff to confirm what landed, set aside the PR monitor's draft
-  (it misread the close as unexplained), and drafted a one-line thank-you naming #85 and
-  the conflict they resolved.
+  (it misread the close as unexplained), and posted a short thank-you naming #85 and the
+  conflict they resolved: https://github.com/omerbek/repodx/pull/84#issuecomment-7092706422
 
 **Status:** Closed. The change was merged upstream in #85, which credits this PR and closed it.
 
