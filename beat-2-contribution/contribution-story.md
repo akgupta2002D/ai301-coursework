@@ -90,7 +90,7 @@ data: September's five outside PRs all got a first response within 11 hours, but
 repo had gone quiet since, so I set the first nudge at 7 quiet days. The first run
 drafted a wait note, which I kept off the thread, and flagged that CI hadn't reported; I
 confirmed the workflow was waiting on maintainer approval and rewrote my nudge rule to
-say "tests pass locally". When the maintainer then merged my commits through his own PR
+say "tests pass locally". When the maintainer then merged my commits through their own PR
 #85 and closed #84, the monitor saw only "closed, 0 comments" and drafted a question
 asking whether it was a no; I checked #85's diff, discarded that draft, wrote a short
 thank-you instead, and added a playbook rule to check the timeline for "closed this in
@@ -522,16 +522,16 @@ false-alarm check, and an AI-use section in my own words.
 **Maintainer Feedback:**
 
 - 2026-11-23: about 20 minutes after I opened it, the maintainer (omerbek) applied my
-  commits in his own PR, #85 "Detect Linear API keys (from #84 by akgupta2002D)", which
+  commits in their own PR, #85 "Detect Linear API keys (from #84 by akgupta2002D)", which
   merged and closed #84 and issue #63 (closed as completed). The merged change is mine
   unchanged: the exact-40 pattern, `lin_api_` in `CANDIDATE_LITERALS`, and all three
-  tests. He only rebased it onto the Sentry detector from #83, which touched the same
+  tests. They only rebased it onto the Sentry detector from #83, which touched the same
   `CANDIDATE_LITERALS` line. #85's description credits "the detector and regression
   tests from #84 by @akgupta2002D". No review comments; the length question needed no
   change.
 - 2026-11-23: I read #85's diff to confirm what landed, set aside the PR monitor's draft
   (it misread the close as unexplained), and drafted a one-line thank-you naming #85 and
-  the conflict he resolved.
+  the conflict they resolved.
 
 **Status:** Closed. The change was merged upstream in #85, which credits this PR and closed it.
 
