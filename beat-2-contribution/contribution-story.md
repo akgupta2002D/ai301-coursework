@@ -145,26 +145,44 @@ Claim comment: https://github.com/omerbek/repodx/issues/63#issuecomment-70911875
 
 **Problem Description**
 
-[In your own words, what is broken or missing?]
+RepoDx is meant to stop people, often people building with AI tools, from pushing live
+API keys. It recognizes keys from about 25 providers, but not Linear. A Linear personal
+API key (`lin_api_` followed by 40 letters and digits) can sit in a file and RepoDx will
+report the repo as safe to push.
 
 **Expected Behavior**
 
-[What should happen?]
+A `lin_api_` key in a scanned file is reported as a critical secret named "Linear API
+key", with its file and line, exactly like the other provider keys (one level less
+severe in test or example folders, as for every other secret).
 
 **Current Behavior**
 
-[What actually happens?]
+Nothing is reported. `scan_line_for_secrets` returns `[]` for a line holding a Linear key,
+and a full scan of a folder whose only file holds one finds 0 critical issues, while the
+same setup with an npm token is flagged (see Reproduction Evidence).
 
 **Affected Components**
 
-[Which parts of the codebase are involved?]
+- `repodx.py` `SECRET_PATTERNS`: the provider regex list; it has no Linear entry.
+- `repodx.py` `CANDIDATE_LITERALS` and `has_candidate()`: the fast pre-filter; it has no
+  `lin_api_`, so `check_file_contents` (lines 789 and 797) never hands a Linear line to
+  the scanner.
+- `tests/test_repodx.py` `SecretScanTests`: where provider detection is tested.
 
 **Toolkit**
 
-- Tool:
-- What it produced:
-- Difficulties:
-- What changed:
+- Tool: my repo memory file (`CLAUDE.local.md` in my repodx fork), written from one
+  scoped read of the secret scanner and its tests, plus Claude Code to look up the key
+  format.
+- What it produced: the map of the four pieces above (pattern list, pre-filter, scanner,
+  test), and the key format. Linear doesn't publish a length; the issue says 40, and
+  gitleaks' default rule is `lin_api_(?i)[a-z0-9]{40}`, so I used 40.
+- Difficulties: the issue only mentions the pattern and the literal as steps to follow;
+  why the literal matters (the double `has_candidate` gate) only showed up when I read
+  `check_file_contents` and then tested it in my reproduction.
+- What changed: I added the pre-filter to Affected Components and to my test plan, so
+  the fix is checked with a full file scan and not only one line.
 
 ---
 
@@ -306,29 +324,71 @@ not explained by the fake filter. Run everything from the clone root.
 
 **Analysis**
 
-[Your analysis of the root cause: what is causing the issue, traced
-to the files and functions involved.]
+Detection happens in `check_file_contents` in `repodx.py`. For each file it first asks
+`has_candidate(text)` (line 789), which checks for any string in `CANDIDATE_LITERALS`;
+for each line it asks again with `has_candidate(line)` (line 797), and only then calls
+`scan_line_for_secrets`, which runs every regex in `COMPILED_SECRET_PATTERNS` (built from
+`SECRET_PATTERNS`) and drops matches that `looks_fake()`. Linear keys fail at both
+layers: `lin_api_` is not in `CANDIDATE_LITERALS`, so the line never reaches the scanner,
+and there is no Linear regex in `SECRET_PATTERNS`, so the scanner wouldn't match it
+anyway. My reproduction's step 5 shows that fixing only the regex still misses the key in
+a real file scan.
 
 **Proposed Solution**
 
-[High-level description of your fix approach, and what you are
-deliberately NOT changing.]
+Add one entry, `("Linear API key", r"\blin_api_[A-Za-z0-9]{40}\b")`, to `SECRET_PATTERNS`,
+and add `"lin_api_"` to `CANDIDATE_LITERALS`. Length 40 follows the issue and gitleaks'
+default rule, `lin_api_(?i)[a-z0-9]{40}` (read from `config/gitleaks.toml` in the gitleaks
+repo on 2026-11-22). Risk I'm accepting: Linear doesn't document the length, and one
+third-party page (SailPoint's secret catalogue) shows a 32-character example. With
+`{40}` and `\b`, a 32-character key would not be reported. I'm keeping exact 40 because
+a range like `{32,}` would also match longer non-key strings and raise false alarms,
+which CONTRIBUTING.md asks us to avoid; I'll name this in the PR so the maintainer can
+choose differently. Severity stays critical, like every provider key, and test or example
+folders still downgrade it through the existing `TEST_PATH_DOWNGRADE`.
+
+What I am deliberately not changing: `looks_fake`, severities, `FIXES` (the existing
+"secret" fix text already applies), the scanning loop, README and `docs/README.tr.md`
+provider lists, versions, and CHANGELOG. Past provider PRs (#43 Perplexity, #47 Replicate,
+#60 DigitalOcean; checked with `gh pr view`) changed only `repodx.py` and the tests, and releases are the maintainer's job. I'm also not detecting
+Linear OAuth tokens (`lin_oauth_`), which the issue doesn't ask for.
 
 **Implementation Plan**
 
-1. [Modify file X to do Y]
-2. [Add or change Z]
-3. [Update tests]
+1. `repodx.py`: add the Linear tuple to `SECRET_PATTERNS` and `"lin_api_"` to
+   `CANDIDATE_LITERALS`.
+2. `tests/test_repodx.py`: keep the Linear entry already committed in
+   `test_detects_provider_keys` (it fails today, commit bcac446), and add one file-level
+   test: a temporary repo with `src/config.js` holding a fake key built with `fake(...)`
+   must give exactly one critical "Linear API key" finding at the right line. Add one
+   boundary check: 39 characters after the prefix is not reported. That one passes
+   today too; it guards against false alarms, it isn't proof of the fix.
+3. Run `python3 -m unittest discover` and `python3 repodx.py . --fail-on info` (must
+   stay 100), re-run my reproduction steps 1, 3 and 5 for before/after output, and run
+   RepoDx on a few real repositories to check for false alarms, as CONTRIBUTING.md asks.
 
-[Record deviations here as they happen: what changed mid-build and
-why. A recorded deviation is honest work; silent drift is not.]
+Deviations: none yet.
 
 **Toolkit**
 
-- Tool:
-- What it produced:
-- Difficulties:
-- What changed:
+- Tool: plan-check, with the wild scope, on `plan.md` (this section) and a draft plan
+  comment I kept off the thread. I ran it twice, headless, from my repodx fork.
+- What it produced: a provisional reject on the first run, then accept with all five
+  required checks passing on the second. It confirmed the two `has_candidate` gates at
+  lines 789 and 797 against the code and matched the plan's cause to my repro steps 1,
+  4 and 5.
+- Difficulties: the first run couldn't read the issue thread (the headless session
+  blocked `gh`), so two checks came out unclear, which my verdict rule counts as fail.
+  It also expected a posted repro comment, but the course keeps the repro off the
+  thread. Its notes showed my plan had dropped the 32-character example from my repro,
+  and that two claims (the gitleaks rule, the past-PR precedent) had no evidence in the
+  package. It also flagged gaps in my own skill: an empty `references/` folder and a
+  procedure that never says how to map a live `plan.md` onto its eval-bundle sections.
+- What changed: I gave it a local snapshot of the thread and my repro report, and
+  pointed it at them. I added the 32-character risk and why I keep exact 40, named
+  where the gitleaks rule and PR precedent came from, and reworded the 39-character test
+  as a false-alarm guard rather than proof. The skill gaps are logged for later; I didn't
+  patch the skill mid-build.
 
 ---
 
