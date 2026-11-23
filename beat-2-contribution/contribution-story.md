@@ -58,11 +58,19 @@ one in the week it belongs to.
 
 I built a scout from four `gh search issues` queries, six ranking filters, and a seven-check rubric, then ran a scan that graded five issues. It fell short in three ways: all five survivors were created within the hour because my tie-break was recency, it accepted a one-author repo with 3 stars, and it rejected an umbrella issue that named one small good-first-issue step. I fixed those with a `createdAt` field, a 7-day drop rule, a one-result-per-repo rule, a `repo-adoption` check, and a tracking-issue clause, but a second scan showed my guessed 90-day repo-age threshold rejects good fits like glassbeetle#316, so that rule needs revisiting. The scout also rejected my chosen issue, AetherSDR#7012, because a maintainer hasn't confirmed the design change, which I'll address when I claim it.
 
-**Unit 6: [one line on the tool work]**
+**Unit 6: Installed a project-scoped voice guard and wrote a repo memory file for repodx**
 
-[2-4 sentences: the voice-guard, the repo-memory file. What broke or
-fell short, and what changed because of it. "Nothing broke" counts when
-it is true - say how you know.]
+I extended my voice guide with Upstream rules for claims, questions, and pings, and
+installed the voice guard per project instead of user-wide: the guard, its hook, and my
+skills live in `ai301-unit6-starter/.claude/` (and a copy in my repodx fork, with the
+voice guide linked back to one file), because I want tools scoped to the folders that use
+them. The wiring test passed (the guard stopped `gh issue comment --help` with "no body
+the guard can read"), but running issue-scout headless with `claude -p` failed outright,
+since it can't approve the `gh` calls, so I re-ran it interactively. Writing
+`CLAUDE.local.md` meant reading repodx's scanner, which surfaced two things the issue
+doesn't mention: a pattern does nothing in a real file scan unless its prefix is also in
+`CANDIDATE_LITERALS`, and `looks_fake` silently ignores test keys containing strings like
+"12345678", so I recorded both before starting the fix.
 
 **Unit 7: [one line on the tool work]**
 
