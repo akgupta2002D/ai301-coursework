@@ -467,7 +467,7 @@ done. No deviations from the plan.
 - Tool: Claude Code in my repodx fork, with `CLAUDE.local.md` loaded for the scanner map
   and conventions; `gh pr view` and `gh api` for precedent and the gitleaks rule.
 - What it produced: three commits on `fix/linear-api-key`, each saying what it does, and
-  a 21-line diff (3 lines in `repodx.py`, 18 in tests).
+  a small diff (21 insertions, 1 deletion: 3 lines changed in `repodx.py`, 19 added in tests).
 - Difficulties: no official key spec, so the length was a judgment call; and my own
   first explanation of the env-var path was wrong until a tool checked it against the
   code.
