@@ -172,31 +172,133 @@ Claim comment: https://github.com/omerbek/repodx/issues/63#issuecomment-70911875
 
 **Environment Setup**
 
-[What a stranger would need to stand this up: your operating system,
-the relevant versions (language, runtime, package manager, the project
-itself), and how you set the project up. Then the challenges you faced
-and how you solved them, or that none came up.]
+- macOS (Darwin 25.6.0), Python 3.13.2, no extra packages (RepoDx has no dependencies).
+- RepoDx 0.5.0 (`__version__` in `repodx.py`), upstream `main` at commit `e845025`
+  ("Merge pull request #82").
+- Setup: forked omerbek/repodx to akgupta2002D/repodx, cloned the fork, ran the repo's
+  own checks from CONTRIBUTING.md to get a clean baseline:
+  - `python3 -m unittest discover`: `Ran 115 tests ... OK`
+  - `python3 repodx.py .`: `Score: 100/100 (A)`, `Found: 0 critical, 0 warnings, 0 info`
+- Challenges: none in setup. One format question: Linear does not publish a length for
+  personal API keys. The issue says "about 40 alphanumeric characters"; the one example I
+  found in third-party docs has 32. Today's behavior is the same for both lengths (below),
+  so the reproduction does not depend on it. It matters for the fix, not the repro.
 
 **Steps to Reproduce**
 
-1. [Step 1]
-2. [Step 2]
-3. [Observed result]
+All keys are fake, built at runtime by joining parts, never a real key. The Linear body
+`Q7zT4mWx9Rb2Kd5Nf8Lp3Hs6Vc1Yj0GuE4tA9BnC` is 40 random-looking characters, and both it and
+its first 32 characters pass `looks_fake()` as `False` (step 1 prints this), so a miss is
+not explained by the fake filter. Run everything from the clone root.
+
+1. Line level, 40- and 32-character Linear keys:
+   ```
+   python3 - <<'PY'
+   import repodx
+   body = "Q7zT4mWx9Rb2Kd5Nf8Lp3Hs6Vc1Yj0GuE4tA9BnC"
+   lin40 = "lin" + "_api_" + body
+   lin32 = "lin" + "_api_" + body[:32]
+   for label, k in [("lin_api_ (40 chars)", lin40), ("lin_api_ (32 chars)", lin32)]:
+       print(label, "looks_fake:", repodx.looks_fake(k), "has_candidate:", repodx.has_candidate(k),
+             "scan_line:", repodx.scan_line_for_secrets(f'const key = "{k}";'))
+   PY
+   ```
+2. Control: the same line with an npm token, a provider RepoDx already supports:
+   ```
+   python3 - <<'PY'
+   import repodx
+   npm = "npm_" + "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8"
+   print("npm_ (control) scan_line:", [h[:3] for h in repodx.scan_line_for_secrets(f'const key = "{npm}";')])
+   PY
+   ```
+3. File level: two temporary folders outside the repo, one `config.js` each, then a full scan:
+   ```
+   DIR=$(mktemp -d) && mkdir "$DIR/linear" "$DIR/npm"
+   python3 - "$DIR" <<'PY'
+   import sys, pathlib
+   d = pathlib.Path(sys.argv[1])
+   (d/"linear"/"config.js").write_text('const LINEAR_KEY = "' + "lin" + "_api_" + "Q7zT4mWx9Rb2Kd5Nf8Lp3Hs6Vc1Yj0GuE4tA9BnC" + '";\n')
+   (d/"npm"/"config.js").write_text('const NPM_TOKEN = "' + "npm_" + "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8" + '";\n')
+   PY
+   python3 repodx.py "$DIR/linear"
+   python3 repodx.py "$DIR/npm"
+   ```
+4. Test suite: on branch `fix/linear-api-key` in my fork (commit below), one entry is added,
+   `"Linear API key": fake("lin", "_api_", "Q7zT4mWx9Rb2Kd5Nf8Lp3Hs6Vc1Yj0GuE4tA9BnC")`, to
+   `SecretScanTests.test_detects_provider_keys`. Run `python3 -m unittest discover`.
+5. Does a regex alone fix it? Simulate a fix that adds only the pattern (in memory, no file
+   edited) and scan a file that also reads an environment variable:
+   ```
+   DIR2=$(mktemp -d)
+   python3 - "$DIR2" <<'PY'
+   import sys, re, pathlib, repodx
+   d = pathlib.Path(sys.argv[1])
+   k = "lin" + "_api_" + "Q7zT4mWx9Rb2Kd5Nf8Lp3Hs6Vc1Yj0GuE4tA9BnC"
+   (d/"config.js").write_text('const a = process.env.FOO;\nconst LINEAR_KEY = "' + k + '";\n')
+   repodx.COMPILED_SECRET_PATTERNS.append(("Linear API key", re.compile(r"\blin_api_[A-Za-z0-9]{40}\b")))
+   print("regex-only, scan_line:", [h[:3] for h in repodx.scan_line_for_secrets(f'const key = "{k}";')])
+   print("regex-only, build_report critical:", [f["title"] for f in repodx.build_report(d)["findings"] if f["severity"] == "critical"])
+   PY
+   ```
+
+**Expected:** a `lin_api_` key is reported as a critical secret, like other provider keys.
+**Observed:** it is not reported anywhere.
 
 **Reproduction Evidence**
 
-- **Commit showing reproduction:** [link to commit in your fork]
-- **Screenshots/logs:** [if applicable]
-- **My findings:** [what you discovered during reproduction; an
-  honest, evidenced cannot-reproduce that led you to re-pick or ask
-  the maintainer belongs here and costs you nothing]
+- **Commit showing reproduction:** https://github.com/akgupta2002D/repodx/commit/bcac4462efe58588ed5c0695ced18eed5da55e4e
+  (adds only the failing test case; no fix yet)
+- **Output** (each line from the step in brackets):
+  ```
+  [1] lin_api_ (40 chars) looks_fake: False has_candidate: False scan_line: []
+  [1] lin_api_ (32 chars) looks_fake: False has_candidate: False scan_line: []
+  [2] npm_ (control) scan_line: [('secret', 'critical', 'npm access token')]
+
+  [3] repodx.py $DIR/linear  ->  Score: 76/100 (C)
+                                 Found: 0 critical, 3 warnings, 0 info
+                                 (warnings: missing .gitignore, README, LICENSE)
+  [3] repodx.py $DIR/npm     ->  Score: 51/100 (D)
+                                 Found: 1 critical, 3 warnings, 0 info
+                                 [CRITICAL] npm access token
+
+  [4] FAIL: test_detects_provider_keys (...) (name='Linear API key')
+      - []
+      + [('secret', 'critical', 'Linear API key')]
+      Ran 115 tests ... FAILED (failures=1)
+
+  [5] regex-only, scan_line: [('secret', 'critical', 'Linear API key')]
+  [5] regex-only, build_report critical: []
+  ```
+- **My findings:** the issue is real on current `main`, and there are two gaps that both
+  need fixing. First, there is no Linear entry in `SECRET_PATTERNS`, so
+  `scan_line_for_secrets` returns nothing (steps 1 and 4). Second, `lin_api_` is not in
+  `CANDIDATE_LITERALS`, so `has_candidate()` is `False`. `check_file_contents` gates on it
+  twice: once per file (`repodx.py:789`) and again per line (`repodx.py:797`) before it
+  calls `scan_line_for_secrets`. So the line is skipped even in a file that reads
+  environment variables. Step 5 shows it: with only the regex added, the line-level scan
+  finds the key, but a full scan of a file containing `process.env.FOO` and the key still
+  reports no critical finding. Adding only the regex would pass the unit test but miss
+  keys in real scans, so my test plan needs a file-level check too.
+  Open question for the fix: the exact length to match (40 per the issue, 32 in one
+  third-party example, no official spec).
 
 **Toolkit**
 
-- Tool:
-- What it produced:
-- Difficulties:
-- What changed:
+- Tool: repro-check, with the wild scope for real repos and my voice guide. I used it to
+  grade my claim alone before posting, then my claim and repro report together.
+- What it produced: the claim passed on the first run. The full package was rejected on
+  the first run (analysis-honesty and steps-followable failed) and accepted 6/6 on the
+  second.
+- Difficulties: it caught a real error of mine. I claimed a file that reads environment
+  variables would still get its lines scanned, but repodx.py:797 re-checks every line,
+  so that was wrong, and it broke my own voice rule against claiming confidence I hadn't
+  earned. It also flagged output lines (the npm control, the 32-character key) that no
+  written step produced. It couldn't run the repo's code itself, so it graded my pasted
+  output against the code.
+- What changed: I removed the wrong claim and replaced it with a step that demonstrates
+  the two checks (a regex-only fix still misses the key in a full scan), which turned a
+  mistake into a stronger finding. I also wrote every command out in full and tagged
+  each output line with its step.
 
 ---
 
