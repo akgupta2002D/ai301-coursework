@@ -394,39 +394,86 @@ Deviations: none yet.
 
 ## Testing Strategy
 
-[What observable checks prove the fix: your reproduction steps re-run
-against the built change (before and after), and the repo's own test
-suite or checks with the outcome shown. "Tests pass" with nothing
-observable named is not a strategy.]
+Four observable checks, all run on branch `fix/linear-api-key` (79b236b) against `main`
+(e845025):
+
+1. **My reproduction, before and after.** Same steps as Reproduction Process. Before:
+   `[1] lin_api_ (40 chars) has_candidate: False scan_line: []` and a full scan of a file
+   that reads `process.env.FOO` and holds the key gives `Found: 0 critical`. After:
+   `scan_line: [('secret', 'critical', 'Linear API key')]` and the full scan gives
+   `Found: 1 critical` with `[CRITICAL] Linear API key - config.js:2 (lin_ap...nC)`, the
+   value masked. The npm control is flagged both times. A 32-character key is still not
+   reported, by design (exact 40, the risk named in my plan).
+2. **New tests fail without the fix and pass with it.** With `repodx.py` reverted to
+   main: `FAILED (failures=2)` (`test_detects_linear_api_key_in_a_file` and the Linear
+   case of `test_detects_provider_keys`). With only the regex added and no `lin_api_`
+   in `CANDIDATE_LITERALS`: `FAILED (failures=1)`, the file-level test, which is what
+   proves the second half of the fix is needed. `test_linear_api_key_needs_forty_characters`
+   passes before and after; it guards against false alarms and isn't proof of the fix.
+3. **The repo's own checks** (my ship manifest, from CONTRIBUTING.md and CI):
+   `python3 -m unittest discover` gives `Ran 117 tests ... OK` on Python 3.13.2 and on
+   system Python 3.9.6 (the oldest version CI tests), and `python3 repodx.py . --fail-on
+   info` gives `RepoDx: 100/100 (A), 0 critical, 0 warnings, 0 info`, exit 0.
+4. **No false alarms on real repositories**, as CONTRIBUTING.md asks. Main's `repodx.py`
+   and the branch give identical scores and finding counts on four real local repos
+   (ai301-coursework 78/5, pathreview-ai301-fa26-s1 92/1, ai301-unit6-starter 78/5,
+   ai301-unit7-starter 78/5), with 0 Linear findings.
 
 **Toolkit**
 
-- Tool:
-- What it produced:
-- Difficulties:
-- What changed:
+- Tool: Claude Code, re-running my reproduction script against a `git worktree` of main
+  and against the branch, plus my ship manifest's two checks, saved to `test_evidence.md`.
+- What it produced: the before/after output above, the two "without the fix" runs, the
+  manifest checks on two Python versions, and the four-repo false-alarm table.
+- Difficulties: the plain "tests pass" result couldn't show the `CANDIDATE_LITERALS`
+  half of the fix, because the issue's own test calls `scan_line_for_secrets` directly
+  and skips the pre-filter. And `repodx.py .` scans my untracked local files too
+  (`.claude/`, my plan and evidence files), so a pasted key there would fail the
+  self-scan.
+- What changed: I added a regex-only run to show the file-level test is the one that
+  catches a half fix, and I kept every key in my notes split across strings or masked so
+  the self-scan stays at 100.
 
 ---
 
 ## Implementation Notes
 
-[A running log, added to as you work. Date each entry. What you
-built, decisions you made when you made them, wrong turns included.]
+**2026-11-22**
 
-**[Date]**
+Claimed the issue, reproduced it, and committed a failing test on `fix/linear-api-key`
+(bcac446): the issue's own entry in `test_detects_provider_keys`. Reading
+`check_file_contents` while writing my repo memory file showed the issue has two gaps,
+not one: the regex is missing, and `lin_api_` is missing from `CANDIDATE_LITERALS`, so
+the line is filtered out at `repodx.py:789` and again at `:797`. I first wrote that an
+env-reading file would still get scanned; repro-check caught that the per-line check
+at 797 blocks it, and step 5 of my reproduction now proves it.
 
-[Entry]
+**2026-11-23**
 
-**[Date]**
-
-[Entry]
+Decided the key length. Linear doesn't document it; the issue says about 40, one
+third-party page shows 32, and gitleaks' default rule (read from its `gitleaks.toml`) is
+exactly 40. I chose exact 40 with `\b`, like the neighboring patterns, because a range
+like `{32,}` would also match longer non-key strings, and named the 32 risk in the plan.
+Checked how past provider PRs were shaped (#43, #47, #60 with `gh pr view`): only
+`repodx.py` plus tests, no README or CHANGELOG, so I left those alone. Then built it:
+2c4353c adds a file-level test (`src/config.js`, one critical "Linear API key" at line 2)
+and a 39-character false-alarm guard; 79b236b adds the pattern after Replicate and
+`"lin_api_"` to `CANDIDATE_LITERALS`. Wrong turn avoided: the issue's step-3 test alone
+passes with just the regex, so without the file-level test a half fix would have looked
+done. No deviations from the plan.
 
 **Toolkit**
 
-- Tool:
-- What it produced:
-- Difficulties:
-- What changed:
+- Tool: Claude Code in my repodx fork, with `CLAUDE.local.md` loaded for the scanner map
+  and conventions; `gh pr view` and `gh api` for precedent and the gitleaks rule.
+- What it produced: three commits on `fix/linear-api-key`, each saying what it does, and
+  a 21-line diff (3 lines in `repodx.py`, 18 in tests).
+- Difficulties: no official key spec, so the length was a judgment call; and my own
+  first explanation of the env-var path was wrong until a tool checked it against the
+  code.
+- What changed: I wrote the length decision and its risk into the plan and PR instead of
+  guessing silently, and I test the claim I got wrong (a regex-only build) instead of
+  just deleting it.
 
 ---
 
