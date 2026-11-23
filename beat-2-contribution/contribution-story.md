@@ -83,16 +83,18 @@ it only recognized `Closes #` and `docs/CONTRIBUTING.md`. I changed that rubric 
 procedure to follow the repo's stated rules, and the gate then passed and let PR #84
 open.
 
-**Unit 8: Installed the PR monitor in my fork, wrote a playbook from repodx's real review times, and held a wait note**
+**Unit 8: Installed the PR monitor in my fork, wrote a playbook from repodx's real review times, and caught its misread of my close**
 
 I installed the PR monitor in my repodx fork's `.claude/` and wrote my playbook from
-data: CONTRIBUTING.md says reviews come "within a day", and September's five outside PRs
-all got a first response within 11 hours, but no outside PR has merged since 2026-09-27
-and #83 sat 3 days untouched, so I set the first-review nudge at 7 quiet days. Its first
-run on PR #84 drafted a wait note (no nudge before 2026-11-30), which I kept off the
-thread. It also flagged that no CI had reported; I confirmed the `tests` workflow is at
-`action_required`, waiting on maintainer approval, so I rewrote my nudge rule to say
-"tests pass locally" instead of claiming checks pass.
+data: September's five outside PRs all got a first response within 11 hours, but the
+repo had gone quiet since, so I set the first nudge at 7 quiet days. The first run
+drafted a wait note, which I kept off the thread, and flagged that CI hadn't reported; I
+confirmed the workflow was waiting on maintainer approval and rewrote my nudge rule to
+say "tests pass locally". When the maintainer then merged my commits through his own PR
+#85 and closed #84, the monitor saw only "closed, 0 comments" and drafted a question
+asking whether it was a no; I checked #85's diff, discarded that draft, wrote a short
+thank-you instead, and added a playbook rule to check the timeline for "closed this in
+#N" before treating a close as a rejection.
 
 ---
 
@@ -519,10 +521,19 @@ false-alarm check, and an AI-use section in my own words.
 
 **Maintainer Feedback:**
 
-- 2026-11-23: none yet. CI (`tests` workflow) shows `action_required`, waiting for the
-  maintainer to approve workflows for a first-time contributor.
+- 2026-11-23: about 20 minutes after I opened it, the maintainer (omerbek) applied my
+  commits in his own PR, #85 "Detect Linear API keys (from #84 by akgupta2002D)", which
+  merged and closed #84 and issue #63 (closed as completed). The merged change is mine
+  unchanged: the exact-40 pattern, `lin_api_` in `CANDIDATE_LITERALS`, and all three
+  tests. He only rebased it onto the Sentry detector from #83, which touched the same
+  `CANDIDATE_LITERALS` line. #85's description credits "the detector and regression
+  tests from #84 by @akgupta2002D". No review comments; the length question needed no
+  change.
+- 2026-11-23: I read #85's diff to confirm what landed, set aside the PR monitor's draft
+  (it misread the close as unexplained), and drafted a one-line thank-you naming #85 and
+  the conflict he resolved.
 
-**Status:** Awaiting review
+**Status:** Closed. The change was merged upstream in #85, which credits this PR and closed it.
 
 **Toolkit**
 
@@ -592,8 +603,8 @@ false-alarm check, and an AI-use section in my own words.
 - Check that a picked issue is still open, and re-check right before claiming. Two of my
   original picks closed in under a week; my rubric now has that gap logged.
 - Read the code path before writing any claim about it, not after a tool flags it.
-- Look at the maintainer's current pace, not just the historical one, before choosing a
-  repo: repodx answered in hours in September but has gone quiet since.
+- Not trust a single signal about a maintainer's pace: repodx looked quiet for two months,
+  then merged my fix within half an hour of my opening the PR.
 - Make my tools' assumptions explicit earlier (fixed dates in my search strategy, course
   defaults in my rubric), since each one cost me a failed run before I saw it.
 
