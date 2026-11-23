@@ -1,4 +1,4 @@
-# Contribution: [Issue Title]
+# Contribution: Detect Linear API keys (lin_api_...)
 
 Path: `beat-2-contribution/contribution-story.md`
 
@@ -8,10 +8,9 @@ format criteria grade exactly that. Your course repo link is the whole submissio
 files and no evidence uploads are part of Assignment 5.
 
 **Contribution Number:** [1]
-**Student:** [Student name]
-**GitHub Username:** [your GitHub username, exactly as it appears on your profile - no @, no
-profile URL. Your comments upstream are identified by this name.]
-**Issue:** [GitHub issue link]
+**Student:** Ankit Gupta
+**GitHub Username:** akgupta2002D
+**Issue:** https://github.com/omerbek/repodx/issues/63
 **Pull Request:** [GitHub PR link, once opened]
 
 One repository, built across units 5 to 8, telling the whole story of your real
@@ -79,24 +78,58 @@ drafted, what you did with the draft.]
 
 ## Why I Chose This Issue
 
-[1-2 paragraphs in your own words: how you searched, what your scan
-surfaced, what your scout's verdict said, why this issue fits your
-profile, and what you hope to learn. If your scout's verdict on it
-was reject and you chose it anyway, say so here and say why; choosing
-against your own tool silently is what loses points. Close with an
-honest read of the tool itself: where the scout fell short on a real
-wild search and what you changed or would change, or what convinced
-you it held up. **Record the link to your claim comment in this section too.**
-Not claimed yet? Write `claim pending` and today's date where the link goes,
-and add the link the moment your claim lands.]
+I searched with my issue scout: four `gh search issues` queries, ranking filters, and a
+seven-check rubric. Last week I graded three picks directly: aerostack2#1047 (accepted),
+AetherSDR#7012 (rejected on scope), and glassbeetle#316 (rejected on repo age). My Unit 5
+entry names AetherSDR#7012 as my choice, but after patching my rubric this week I
+re-graded all three and the picture changed. #7012 now passed, flagged *ambitious*
+because the change reverses a deliberate design choice a maintainer still has to confirm,
+and it is C++/Qt GUI wording, a weak fit for the backend and Python work I want. The other
+two had already been fixed and closed by other contributors within days. So I ran a fresh
+scan: 398 unique results, 51 survivors, top 5 graded. Only one was accepted:
+omerbek/repodx#63, *straightforward*, found by my Q4 query (api + Python + good first
+issue). Before claiming, I read the whole thread (open, no comments, no assignee, no linked
+PR) and the repo's CONTRIBUTING.md, which asks contributors to claim by comment and puts no
+restriction on AI-assisted work.
+
+It fits me for two reasons. RepoDx is a pre-push safety check for AI-built projects, and
+I've worked on AI safety and evals before, so improving a tool that catches leaked secrets
+in AI-assisted code is the kind of work I want to do more of. It also looks simple in a
+good way: a bounded Python change where the test is part of the work. I add a pattern to
+`SECRET_PATTERNS` and `CANDIDATE_LITERALS` in `repodx.py`, plus a test built with
+`fake(...)` so no real key is committed. I've worked with regular expressions in
+coursework, including building a compiler, so I can focus on doing it properly rather than
+learning regex from scratch. I hope to learn how a real project wants a change shaped:
+verifying a format against the provider's docs, writing a test that fails before the fix
+and passes after, checking for false alarms on real repositories, and getting a PR through
+review. My honest read of the scout: the scope patch did what it was meant to (it turned
+#7012's open design edge into a difficulty note instead of a reject), but the wild exposed
+new gaps. No check asks whether an issue is still open, so a closed, already-fixed issue
+only failed because the scout judged a merged PR as a claim. My "younger than 7 days"
+filter was written as a fixed date, so it silently dropped 273 results. And sorting by
+fewest comments surfaced four solo repos that all failed adoption. I logged all three in
+scan-notes.md; the next fixes are a relative date rule and an "issue is open" clause in
+`unclaimed`.
+
+Claim comment: https://github.com/omerbek/repodx/issues/63#issuecomment-7091187528
 
 **Toolkit**
 
-- Tool: issue-scout (your scout: your search strategy, your rubric),
-  and how you used it
-- What it produced: [the scan and its verdict on this issue, described]
-- Difficulties: [where it fell short, or "none met" if none did]
-- What changed: [what you patched or would update, or "nothing"]
+- Tool: issue-scout (my search strategy and rubric). I used it to re-grade last week's three
+  picks directly, then ran a fresh live scan, and checked the chosen issue's thread myself
+  before claiming.
+- What it produced: the re-grade accepted only AetherSDR#7012 (ambitious) and rejected the
+  other two as already fixed; the scan graded 5 of 51 survivors and accepted one,
+  omerbek/repodx#63, with all 7 checks passing and the difficulty note "straightforward:
+  the issue names where the change lives and the change is bounded."
+- Difficulties: my original scope check rejected any issue with an open design edge, which
+  would reject most real issues. The wild scan also showed that no check catches a closed
+  issue, my age filter used a fixed date that dropped 273 results, and my ranking lifted
+  tiny solo repos.
+- What changed: I replaced `scope-fits` with `scope-feasible` (the unit-6 scope patch) and
+  added the difficulty note, keeping one clause of my own: a maintainer saying an issue is
+  blocked or will not be accepted still fails. I logged the closed-issue gap, the
+  fixed-date filter, and the ranking bias in scan-notes.md as the next fixes.
 
 ---
 
