@@ -11,7 +11,7 @@ files and no evidence uploads are part of Assignment 5.
 **Student:** Ankit Gupta
 **GitHub Username:** akgupta2002D
 **Issue:** https://github.com/omerbek/repodx/issues/63
-**Pull Request:** [GitHub PR link, once opened]
+**Pull Request:** https://github.com/omerbek/repodx/pull/84
 
 One repository, built across units 5 to 8, telling the whole story of your real
 contribution. Fill it as you work, not at the end — the sections below ask for evidence that
@@ -72,10 +72,16 @@ doesn't mention: a pattern does nothing in a real file scan unless its prefix is
 `CANDIDATE_LITERALS`, and `looks_fake` silently ignores test keys containing strings like
 "12345678", so I recorded both before starting the fix.
 
-**Unit 7: [one line on the tool work]**
+**Unit 7: Installed the ship-gate per project, wrote a two-check manifest, and fixed my own pr-precheck rubric**
 
-[2-4 sentences: the ship-gate and your gate manifest. What it produced
-on your real branch, what fought you, what changed because of it.]
+I installed the ship-gate inside my repodx fork's `.claude/` rather than `~/.claude/`, and
+wrote a manifest of the two checks CONTRIBUTING.md names: `python3 -m unittest discover`
+and `python3 repodx.py . --fail-on info`, which enforces "must keep scoring 100". On my
+real branch both checks passed, but my own pr-precheck rejected it because its rubric
+demanded an issue number in the branch name, a course default repodx never asks for, and
+it only recognized `Closes #` and `docs/CONTRIBUTING.md`. I changed that rubric row and
+procedure to follow the repo's stated rules, and the gate then passed and let PR #84
+open.
 
 **Unit 8: [one line on the tool work]**
 
@@ -479,27 +485,50 @@ done. No deviations from the plan.
 
 ## Pull Request
 
-**PR Link:** [GitHub PR URL when opened]
+**PR Link:** https://github.com/omerbek/repodx/pull/84
 
-**PR Description:** [what the PR says; much of the content above
-adapts into it]
+**PR Description:** Title "Detect Linear API keys", body opening with `Fixes #63`. It
+explains the two gaps and fixes both: the Linear pattern
+`("Linear API key", r"\blin_api_[A-Za-z0-9]{40}\b")` in `SECRET_PATTERNS`, and `"lin_api_"`
+in `CANDIDATE_LITERALS`, without which `check_file_contents` drops the line at lines 789
+and 797. It lists the three tests (the issue's provider entry, a file-level test that
+fails if only the regex is added, and a 39-character false-alarm guard), what it does not
+change (severities, `looks_fake`, `FIXES`, README lists, versions, CHANGELOG, following
+#43, #47 and #60), and the length question: exact 40 per the issue and gitleaks' default
+rule, with the 32-character example named and a range offered if the maintainer prefers.
+It includes before/after output (main: `scan_line: []`, `Found: 0 critical`; branch: one
+critical "Linear API key" at `config.js:2`, masked), the failing-without-fix runs, the
+checks (117 tests OK on Python 3.13.2 and 3.9.6, self-scan 100/100), the four-repo
+false-alarm check, and an AI-use section in my own words.
 
 **Maintainer Feedback:**
 
-- [Date]: [feedback received, or "none yet"; silence is a normal
-  state and costs you nothing]
-- [Date]: [how you addressed it]
+- 2026-11-23: none yet (PR opened today).
 
-**Status:** [Awaiting review / Iterating / Merged / Closed. The
-status is a fact you record, never a grade: the PR is graded as
-opened.]
+**Status:** Awaiting review
 
 **Toolkit**
 
-- Tool:
-- What it produced:
-- Difficulties:
-- What changed:
+- Tool: the ship-gate, installed per project in my fork's `.claude/ship-gate/` with its
+  hook in the fork's `.claude/settings.json`, my ship manifest (`python3 -m unittest
+  discover` and `python3 repodx.py . --fail-on info`), and my pr-precheck from unit 4.
+  I ran it by hand on the branch before opening the PR, then opened the PR with
+  `gh pr create`.
+- What it produced: the hook test stopped `gh pr create --help` twice (voice guard and
+  ship-gate). The first by-hand run passed both repo checks but my pr-precheck rejected
+  the branch on "Repo's other stated asks are followed": branch `fix/linear-api-key` has
+  no issue number. After my rubric fix it passed all checks, and passed again after I
+  edited the AI-use section of the description.
+- Difficulties: that reject came from my own rubric, not the repo. It hard-coded the
+  course's branch format (type prefix, issue number, description) as if every repo asked
+  for it, only accepted `Closes #`, and only looked for `docs/CONTRIBUTING.md`; repodx
+  states no branch rule, asks for `Fixes #`, and keeps CONTRIBUTING.md at the root. The
+  installer also assumes everything lives in `~/.claude/`, which I don't use.
+- What changed: I fixed the rubric row and procedure in my pr-precheck to follow the
+  repo's stated rule and accept `Fixes #`/`Resolves #` and any CONTRIBUTING.md location,
+  instead of renaming my branch to satisfy a rule the repo never set. I installed the gate
+  by hand into the fork's `.claude/`, which works because it finds its files relative to
+  its own folder.
 
 ---
 
